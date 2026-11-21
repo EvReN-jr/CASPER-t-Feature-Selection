@@ -1,0 +1,13 @@
+.venv/
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+push_token.txt
+*token*.txt
+pipeline/data/
+pipeline/results/
+results/tables/
+tables/

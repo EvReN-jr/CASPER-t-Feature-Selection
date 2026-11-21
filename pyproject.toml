@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "casper-fs"
+version = "0.2.0"
+description = "CASPER-t: a reliability-weighted topological feature selector (scikit-learn compatible)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "K. Boyabatli" }]
+keywords = ["feature-selection", "rough-sets", "topology", "permutation-importance", "scikit-learn"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.21",
+    "scipy>=1.7",
+    "scikit-learn>=1.1",
+]
+
+[project.optional-dependencies]
+fast = ["numba>=0.57"]
+test = ["pytest>=7.0"]
+
+[project.urls]
+Homepage = "https://github.com/EvReN-jr/CASPER-t-Feature-Selection"
+Repository = "https://github.com/EvReN-jr/CASPER-t-Feature-Selection"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/casper"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/casper", "tests", "README.md", "LICENSE", "pyproject.toml"]
