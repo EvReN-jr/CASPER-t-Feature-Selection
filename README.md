@@ -9,9 +9,10 @@
 (with a Monte Carlo reliability margin *t*) a **topological feature selector**,
 packaged as a drop-in scikit-learn transformer.
 
-> Keep a *small, confident* subset of features instead of all of them without
-> paying for it in accuracy. On 9 benchmark datasets CASPER-t retains a **median
-> 60 % of features** while tracking full-feature accuracy to within **~1–2 points**.
+> A model-free selector that fixes its own subset size. On 9 benchmark datasets
+> CASPER-t retains **48–75 % of the features** (mean 60 %) at a **median accuracy
+> loss of 0.93 points** against the full set. Random subsets of the same size lose
+> 2.0 points, classical rankings 0.2–0.6 points.
 
 ```bash
 pip install casper-fs
@@ -52,37 +53,36 @@ inside a scikit-learn `Pipeline` / cross-validation loop.
 
 ## Benchmark
 
-**Protocol.** Training-fold-confined repeated cross-validation (5 folds × 2 repeats) on **9 datasets**, evaluated across **8
-classifiers**, against **13 feature-selection baselines** (filter, wrapper,
-embedded, and rough-set families). Baselines are compared at **matched cardinality**. Each is truncated to CASPER-t's own per-fold feature count. So, every method is judged on the *same feature budget*.
-
-![Parsimony without accuracy loss](https://raw.githubusercontent.com/EvReN-jr/CASPER-t-Feature-Selection/main/assets/parsimony.png)
-
-The headline is **parsimony**. CASPER-t discards 25–51 % of the features yet stays
-within a point or two of using everything and **matches or beats the full set on
-4 of 9 datasets** (banknote, diabet, htru2, sonar).
+**Protocol.** Training-fold-confined repeated cross-validation (5 folds × 2 repeats) on
+**9 main datasets** (plus 7 datasets with 53–490 features and 4 mixed-type datasets),
+evaluated with **7 classifiers**, against **18 competing selectors** (filter, wrapper,
+embedded, rough-set and granular-ball families) and a random subset of the same size.
+Baselines are compared at **matched cardinality**: each is truncated to CASPER-t's own
+per-fold feature count, so every method is judged on the *same feature budget*.
 
 | Dataset | Features kept (K / p) | CASPER-t acc. | All-features acc. | Δ |
 |---|---|---|---|---|
-| banknote  | 3.0 / 4   | 96.8 | 97.1 | −0.2 |
-| htru2     | 5.7 / 8   | 97.1 | 97.0 | **+0.1** |
-| magic     | 7.0 / 10  | 81.2 | 82.5 | −1.3 |
-| diabet    | 6.7 / 10  | 77.6 | 76.5 | **+1.1** |
-| phoneme   | 3.0 / 5   | 77.7 | 81.9 | −4.2 |
-| cyron     | 3.6 / 6   | 84.9 | 87.7 | −2.9 |
-| sonar     | 34.0 / 60 | 80.3 | 80.2 | **+0.2** |
-| parkinson | 8.4 / 17  | 86.2 | 86.4 | −0.3 |
-| kanser    | 12.7 / 26 | 94.2 | 96.0 | −1.8 |
+| Cryotherapy   | 3.6 / 6   | 84.92 | 87.62 | −2.70 |
+| Diabetes      | 6.6 / 10  | 76.85 | 75.94 | +0.91 |
+| Breast Cancer | 12.5 / 26 | 93.61 | 96.17 | −2.56 |
+| Parkinson's   | 9.4 / 19  | 85.64 | 85.31 | +0.33 |
+| Sonar         | 31.4 / 60 | 78.30 | 79.57 | −1.27 |
+| Banknote      | 3.0 / 4   | 96.55 | 96.82 | −0.28 |
+| Phoneme       | 3.0 / 5   | 76.85 | 81.62 | −4.77 |
+| HTRU2         | 4.3 / 7   | 96.44 | 96.89 | −0.44 |
+| MAGIC         | 6.9 / 10  | 81.15 | 82.08 | −0.93 |
 
-*Accuracy is the mean over 8 classifiers × outer folds. K is the mean per-fold
-subset size, p is the number of candidate features.*
+*Accuracy is the mean over the 7 classifiers and the 10 outer folds. K is the mean
+per-fold subset size, p the median number of features after the redundancy filter.*
 
-**On honest terms.** At a matched feature budget no single selector dominates the
-field. CASPER-t's mean **Accuracy rank is mid-pack (≈ 7.7 of 14 methods)**, and
-its value is the *combination* of a principled topological criterion with a
-reliability gate that yields compact subsets. Every rank, dispersion (fold std and
-across-classifier std), and per-fold number behind these figures is shipped in
-[`detailed_tables/`](detailed_tables/), nothing is averaged away.
+**On honest terms.** At a matched feature budget the rank tests do not separate
+CASPER-t from the other selectors, and tree-based scores lead in mean rank
+(CASPER-t: 12.5 of 19). Along the accuracy–K curve its ranking is significantly
+better than a random ordering on Banknote and MAGIC and significantly worse on
+Phoneme. A label-permutation null shows that the retained share is set by the
+quartile cut rather than by the labels. With several hundred features the ranking
+is no better than random, so CASPER-t is not recommended there. Per-fold results
+are in [`results/`](results/) and [`detailed_tables/`](detailed_tables/).
 
 ---
 
@@ -138,11 +138,12 @@ feature), 8 threads:
 | Banknote | 1097 | 4 | 43 | 0.60 | 0.02 |
 | Breast Cancer | 455 | 30 | 451 | 0.56 | 0.11 |
 
-Under the measurement protocol of the article (one fit per fold, folds in parallel, three
-threads each) a full fit on the nine main datasets takes 0.01–3.4 s. That is faster than
-Boruta, RFE, ReliefF, standard permutation importance, GBNRS and GBRS on every dataset,
-and slower only than plain filter scores (ANOVA, mutual information, LASSO, HSIC-Lasso)
-and QuickReduct.
+Under the measurement protocol of the article (one thread per fit, ten folds in parallel
+on a 16-core workstation) a full fit on the nine main datasets takes 0.01–3.4 s. That is
+faster than Boruta, RFE, ReliefF, standard permutation importance, GBNRS and GBRS on every
+dataset, and on most datasets slower than plain filter scores (ANOVA, mutual information,
+LASSO, HSIC-Lasso) and QuickReduct. `code/run_runtime.py` times one fit per fold with one
+thread on your own machine (on a four-core laptop: 0.12–7.5 s).
 
 Without `numba` the NumPy fallback is used. It is also exact, only slower.
 
@@ -168,6 +169,18 @@ Fitted attributes: `support_`, `delta_gamma_`, `sem_`, `t_stats_`, `eps_star_`,
 regenerates the LaTeX tables from those outputs.
 `code/` holds the experiment core (`CasperSelector`, the exact fast evaluation) and the
 tests cited in the article's appendix, see `code/README.md`.
+
+```bash
+pip install -r requirements.txt          # versions of the verification environment
+python -m pytest tests code/tests -q     # on Windows set PYTHONUTF8=1 first
+cd code && python run_runtime.py         # times every fold and checks it against results/main
+```
+
+With the versions in `requirements.txt`, `run_runtime.py` reproduces the stored
+selections of all ten folds on eight of the nine main datasets and on six of the ten
+folds of Diabetes, where k-means returns slightly different Jenks centres. The analyses
+added in the revision are `run_label_null.py` (L = 100, all folds),
+`run_labelnull_overlap.py`, `run_synthetic_eps.py` and `run_reference_percentile.py`.
 
 ### Detailed results (`detailed_tables/`)
 
