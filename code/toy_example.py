@@ -82,7 +82,7 @@ def run():
           "| öznitelik | μ̂ (N=30) | SD | SEM | E[Δγ] (tam) | SD (tam) | t_f | seçildi |", "|---|---|---|---|---|---|---|---|"]
     L += [f"| {NAMES[i]} | {mu[i]:.4f} | {sd[i]:.4f} | {sem[i]:.4f} | {exact[i,0]:.4f} | {exact[i,1]:.4f} | {t[i]:.2f} | {'✓' if NAMES[i] in res['selected'] else '✗'} |" for i in range(3)]
     L += ["", f"Q1(μ̂) = {q1:.4f}, κ = 1.5 → seçilen: **{', '.join(res['selected'])}**", ""]
-    open(os.path.join(OUT, "toy_example.md"), "w").write("\n".join(L))
+    open(os.path.join(OUT, "toy_example.md"), "w", encoding="utf-8").write("\n".join(L))
     # ---- LaTeX (makale)
     tex = [r"\begin{table}[H]", r"\centering",
            r"\caption{Toy example: Jenks codes, tolerance classes $T_{\varepsilon^*}(x)$, minimal neighbourhoods $N(x)$ and positive-region membership at $\varepsilon^*=" + f"{eps:g}" + r"$.}",
@@ -100,7 +100,7 @@ def run():
     for i in range(3):
         tex.append(f"${NAMES[i]}$ & {mu[i]:.4f} & {sd[i]:.4f} & {sem[i]:.4f} & {exact[i,0]:.4f} & {exact[i,1]:.4f} & {t[i]:.2f} & {'yes' if NAMES[i] in res['selected'] else 'no'} \\\\")
     tex += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
-    open(os.path.join(OUT, "toy_tables.tex"), "w").write("\n".join(tex))
+    open(os.path.join(OUT, "toy_tables.tex"), "w", encoding="utf-8").write("\n".join(tex))
     return res
 
 

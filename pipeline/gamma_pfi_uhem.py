@@ -28,17 +28,20 @@ warnings.filterwarnings('ignore')
 # =============================================================================
 
 def _ensure_pkg(import_name, pip_name=None):
+    # Paketler artik otomatik KURULMAZ (yeniden uretilebilirlik ve guvenlik): eksikse requirements.txt
+    # ile kurun. Eski Colab davranisi icin CASPER_AUTO_INSTALL=1 ayarlanabilir.
     pip_name = pip_name or import_name
     try:
         importlib.import_module(import_name)
     except ImportError:
-        print(f"  [kurulum] {pip_name} bulunamadi, kuruluyor...")
-        subprocess.run([sys.executable, "-m", "pip", "install", "-q", pip_name], check=True)
+        if os.environ.get("CASPER_AUTO_INSTALL") == "1":
+            print(f"  [kurulum] {pip_name} bulunamadi, kuruluyor...")
+            subprocess.run([sys.executable, "-m", "pip", "install", "-q", pip_name], check=True)
+        else:
+            raise ImportError(f"'{pip_name}' kurulu degil. Kurulum: pip install -r requirements.txt "
+                              f"(ya da CASPER_AUTO_INSTALL=1 ile otomatik kurulum).")
 
 
-print("=" * 80)
-print("BAGIMLILIKLAR KONTROL EDILIYOR (Colab'da eksik olabilecekler kuruluyor)")
-print("=" * 80)
 for _imp, _pip in [
     ("numpy", None), ("pandas", None), ("scipy", None), ("sklearn", "scikit-learn"),
     ("openpyxl", None), ("xgboost", None), ("shap", None),
@@ -211,7 +214,13 @@ def _fetch_and_prepare_openml(ds_key, openml_name, out_path):
             X[col] = LabelEncoder().fit_transform(X[col].astype(str))
         X[col] = X[col].astype(float)
 
+    # Sutun adlarindaki son ':' kaldirilir (OpenML MagicTelescope: 'fLength:' -> 'fLength'),
+    # boylece adlar results/ altindaki saklanan secimlerle ayni olur.
+    X.columns = [str(c).rstrip(':') for c in X.columns]
     y_enc = LabelEncoder().fit_transform(pd.Series(y).astype(str))
+    if ds_key == "magic":
+        # Makaledeki kodlama: gamma (g) = 1, hadron (h) = 0 (pozitif oran %64.8). LabelEncoder g=0 verir.
+        y_enc = (pd.Series(y).astype(str).values == "g").astype(int)
     df_out = X.copy()
     df_out['target'] = y_enc
 
